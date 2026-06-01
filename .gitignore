@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+data/
+model/asl_lstm.h5
+logs/
+.env
+venv/
+*.egg-info/
