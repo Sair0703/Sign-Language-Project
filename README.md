@@ -1,85 +1,86 @@
-# Real-Time Sign Language Detection System
+# Realtime Sign Language Detection Using LSTM Model
 
-Real-time American Sign Language (ASL) detection using LSTM neural networks and MediaPipe keypoint extraction. Achieves 92% accuracy across 20+ ASL classes at 20–25 FPS on CPU.
+
+> The Realtime Sign Language Detection Using LSTM Model is a deep learning-based project that aims to recognize and interpret sign language gestures in real-time. It utilizes a Long Short-Term Memory (LSTM) neural network architecture to learn and classify sign language gestures captured from a video feed. The project provides a user-friendly interface where users can perform sign language gestures in front of a camera, and the system will instantly detect and interpret the gestures. This can be used as an assistive technology for individuals with hearing impairments to communicate effectively. Key features of the project include real-time gesture detection, high accuracy in recognition, and the ability to add and train new sign language gestures. The system is built using Python, TensorFlow, OpenCV, and Numpy, making it accessible and easy to customize. With the Realtime Sign Language Detection Using LSTM Model, we aim to bridge the communication gap and empower individuals with hearing impairments
+
+
+## Table of Contents
+
+- [About the Project](#about-the-project)
+- [Demo](#demo)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+## About the Project
+
+This section provides an overview of the Realtime Sign Language Detection Using LSTM Model project. It describes the project's purpose, which is to develop a system that can accurately detect and interpret sign language gestures in real time. It also highlights the use of LSTM (Long Short-Term Memory) models for this task and emphasizes the project's significance in improving communication accessibility for the deaf and hard of hearing community.
 
 ## Demo
 
-![Demo](demo.gif)
+This section showcases a demonstration of the Realtime Sign Language Detection Using LSTM Model project.
+
+
+https://github.com/AvhishekAdhikary/Realtime-Sign-Language-Detection-Using-LSTM-Model/assets/32614982/16bd1d47-cc3f-488c-8d0e-e400004dc716
+
+
+The demo allows viewers to see how the system accurately interprets sign language gestures and provides real-time results.
 
 ## Features
 
-- **Real-time inference** at 20–25 FPS on CPU (no GPU required)
-- **20+ ASL classes** including letters A–Z and common words
-- **LSTM architecture** with MediaPipe hand/pose keypoints as features
-- **Training pipeline** with data collection, preprocessing, and model training scripts
+![model h5](https://github.com/AvhishekAdhikary/Realtime-Sign-Language-Detection-Using-LSTM-Model/assets/32614982/ece8ef5e-295c-4cfd-beb5-255ea88c8b76)
 
-## Tech Stack
 
-- Python, TensorFlow/Keras, OpenCV, MediaPipe
-- LSTM neural network (sequence classification)
-- NumPy, Scikit-Learn, Matplotlib
+- Real-time sign language detection: The system can detect and interpret sign language gestures in real time, providing immediate results.
+- High accuracy: The LSTM (Long Short-Term Memory) model used in the project ensures accurate recognition of a wide range of sign language gestures.
+- Multi-gesture support: The system can recognize and interpret various sign language gestures, allowing for effective communication.
+- Easy integration: The project provides code snippets and examples for seamless integration into other applications or projects.
+- Accessibility improvement: The Realtime Sign Language Detection Using LSTM Model project contributes to enhancing communication accessibility for the deaf and hard of hearing community.
+- Customization options: The system supports customization of gestures, allowing users to adapt it to their specific needs.
+- Language flexibility: The model can be trained to recognize sign language gestures from different languages, making it adaptable to various communication contexts.
+- User-friendly interface: The project includes a user-friendly interface that simplifies the interaction with the system, ensuring a smooth user experience.
+- Open-source: The Realtime Sign Language Detection Using LSTM Model is an open-source project, encouraging contributions and fostering collaboration in the development community.
 
-## Project Structure
+![Neural Network](https://github.com/AvhishekAdhikary/Realtime-Sign-Language-Detection-Using-LSTM-Model/assets/32614982/2adabb2c-db8e-47a3-a7ae-f2ce7175cc82)
 
+
+## Getting Started
+
+To get started with the Realtime Sign Language Detection Using LSTM Model, follow these steps:
+
+### Prerequisites
+
+- Python
+- TensorFlow
+- OpenCV
+- Numpy
+
+### Installation
+
+1. Clone the repository:
+
+```shell
+git clone https://github.com/AvhishekAdhikary/Realtime-Sign-Language-Detection-Using-LSTM-Model.git
 ```
-sign-language-detector/
-├── collect_data.py       # Webcam-based keypoint data collection
-├── train_model.py        # LSTM model training
-├── realtime_detect.py    # Live inference from webcam
-├── model/
-│   └── asl_lstm.h5       # Trained model weights
-├── data/                 # Collected keypoint sequences
-├── requirements.txt
-└── README.md
-```
+2. Install Dependencies:
 
-## Setup
+  ```shell
+  pip install notebook
+  ```
+3. Run Jupyter Notebook:
 
-```bash
-pip install -r requirements.txt
-```
+  ```shell
+  jupyter notebook
+  ```
 
 ## Usage
 
-### 1. Collect Training Data (optional — pretrained model included)
-```bash
-python collect_data.py
-```
-- Opens webcam, press the class key (A–Z) to record sequences
-- Each class collects 30 sequences × 30 frames of MediaPipe keypoints
+Simply run all the cells inside the 'RealTimeSignLanguageDetection.ipynb' file.
 
-### 2. Train the Model
-```bash
-python train_model.py
-```
-- Trains LSTM on collected sequences
-- Saves model to `model/asl_lstm.h5`
+## Contributing
 
-### 3. Run Real-Time Detection
-```bash
-python realtime_detect.py
-```
-- Opens webcam and starts live ASL detection
-- Press `q` to quit
+Contributions are welcome! If you have any ideas, suggestions, or bug fixes, please open an issue or submit a pull request.
 
-## Model Architecture
-
-```
-Input: (30 frames, 1662 keypoints)  ← MediaPipe hand + pose landmarks
-LSTM(64) → LSTM(128) → LSTM(64)
-Dense(64, relu) → Dense(32, relu)
-Dense(num_classes, softmax)
-```
-
-- **Input**: 30-frame sequences of MediaPipe keypoints (hand + pose = 1662 features)
-- **Training**: 30 sequences per class, Adam optimizer, categorical cross-entropy
-- **Accuracy**: 92% on held-out test set across 20+ ASL classes
-
-## Results
-
-| Metric | Value |
-|--------|-------|
-| Test Accuracy | 92% |
-| Inference Speed | 20–25 FPS (CPU) |
-| Classes | 20+ ASL signs |
-| Input Features | 1662 keypoints/frame |
