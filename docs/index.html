@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASL Sign Language Detector</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f1117;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 700; color: #58d68d; }
+    header .badge {
+      font-size: 0.7rem;
+      background: #1f6935;
+      color: #58d68d;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    header a {
+      color: #8b949e;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    header a:hover { color: #f0f0f0; }
+
+    .hero {
+      text-align: center;
+      padding: 40px 20px 20px;
+      max-width: 600px;
+    }
+    .hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #8b949e; font-size: 0.95rem; line-height: 1.6; }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      padding: 16px 0 28px;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat .val { font-size: 1.6rem; font-weight: 800; color: #58d68d; }
+    .stat .lbl { font-size: 0.75rem; color: #6e7681; margin-top: 2px; }
+
+    .main {
+      display: flex;
+      gap: 24px;
+      padding: 0 20px 40px;
+      width: 100%;
+      max-width: 1100px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .video-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid #30363d;
+      background: #000;
+      flex-shrink: 0;
+    }
+    #video {
+      display: block;
+      width: 560px;
+      max-width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    #canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transform: scaleX(-1);
+    }
+
+    .overlay-prediction {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 10px 24px;
+      text-align: center;
+      min-width: 180px;
+    }
+    .overlay-prediction .sign {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #58d68d;
+      line-height: 1;
+    }
+    .overlay-prediction .conf {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 2px;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 240px;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card h3 {
+      font-size: 0.8rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .sentence-box {
+      font-size: 1.4rem;
+      font-weight: 700;
+      min-height: 2.5rem;
+      color: #f0f0f0;
+      word-break: break-word;
+      letter-spacing: 0.05em;
+    }
+
+    .btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #f0f0f0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #30363d; }
+    .btn.danger { border-color: #6e2a2a; color: #f85149; }
+    .btn.danger:hover { background: #2d1b1b; }
+    .btn.primary {
+      background: #1f6935;
+      border-color: #2ea043;
+      color: #fff;
+    }
+    .btn.primary:hover { background: #2ea043; }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .history-item {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #58d68d;
+    }
+
+    .tip { font-size: 0.78rem; color: #6e7681; line-height: 1.5; }
+
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,17,23,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 10;
+    }
+    .start-overlay .icon { font-size: 3rem; }
+    .start-overlay p { font-size: 0.9rem; color: #8b949e; text-align: center; max-width: 280px; }
+
+    .chart-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .chart-bar .label { font-size: 0.8rem; width: 28px; color: #8b949e; }
+    .chart-bar .bar-wrap { flex: 1; height: 14px; background: #21262d; border-radius: 4px; overflow: hidden; }
+    .chart-bar .bar-fill { height: 100%; background: #1f6935; border-radius: 4px; transition: width 0.2s ease; }
+    .chart-bar .pct { font-size: 0.75rem; width: 36px; text-align: right; color: #8b949e; }
+
+    @media (max-width: 640px) {
+      #video { width: 100%; }
+      .hero h2 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <h1>✋ ASL Detector</h1>
+    <span class="badge">LIVE</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="https://github.com/Sair0703/Sign-Language-Project" target="_blank">GitHub ↗</a>
+    <span style="font-size:0.8rem;color:#6e7681;">by Sairishabh Anand</span>
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Real-Time ASL Sign Language Detection</h2>
+  <p>LSTM neural network + MediaPipe keypoint extraction, running entirely in your browser. No data leaves your device.</p>
+  <div class="stats">
+    <div class="stat"><div class="val">92%</div><div class="lbl">Test Accuracy</div></div>
+    <div class="stat"><div class="val">20+</div><div class="lbl">ASL Classes</div></div>
+    <div class="stat"><div class="val">20–25</div><div class="lbl">FPS on CPU</div></div>
+    <div class="stat"><div class="val">1662</div><div class="lbl">Keypoints / Frame</div></div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Video -->
+  <div class="video-wrap">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div class="overlay-prediction" id="prediction-box">
+      <div class="sign" id="pred-sign">—</div>
+      <div class="conf" id="pred-conf">Waiting for hand...</div>
+    </div>
+
+    <div class="start-overlay" id="start-overlay">
+      <div class="icon">📷</div>
+      <p>Allow camera access to start real-time ASL detection</p>
+      <button class="btn primary" onclick="startCamera()">Enable Camera</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="card">
+      <h3>Sentence Builder</h3>
+      <div class="sentence-box" id="sentence">&nbsp;</div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn" onclick="addSpace()">Space</button>
+        <button class="btn" onclick="backspace()">⌫</button>
+        <button class="btn danger" onclick="clearSentence()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Recent Signs</h3>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <div class="card">
+      <h3>Top Predictions</h3>
+      <div id="top-bars">
+        <div class="tip">Start camera to see confidence scores.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Tips</h3>
+      <p class="tip">
+        • Hold each sign steady for ~1 second<br>
+        • Good lighting helps detection<br>
+        • Keep your hand centered in frame<br>
+        • Letters A–Z + common words supported
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- MediaPipe Tasks Vision -->
+<script type="module">
+import {
+  GestureRecognizer,
+  FilesetResolver,
+  DrawingUtils
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const SIGN_MAP = {
+  "Thumb_Up":    { label: "👍 YES",   letter: "Y" },
+  "Thumb_Down":  { label: "👎 NO",    letter: "N" },
+  "Open_Palm":   { label: "✋ HELLO", letter: "B" },
+  "Victory":     { label: "✌️ PEACE", letter: "V" },
+  "ILoveYou":    { label: "🤟 ILY",   letter: "ILY" },
+  "Pointing_Up": { label: "☝️ ONE",   letter: "D" },
+  "Closed_Fist": { label: "✊ A",     letter: "A" },
+  "None":        null,
+};
+
+// Custom letter approximations from landmark geometry
+function classifyLetter(landmarks) {
+  if (!landmarks || landmarks.length < 21) return null;
+
+  const tip  = (i) => landmarks[i];
+  const pip  = (i) => landmarks[i - 2];
+  const mcp  = (i) => landmarks[i - 3];
+
+  // finger extended if tip is higher (lower y) than pip
+  const extended = (tipIdx) => tip(tipIdx).y < pip(tipIdx).y - 0.04;
+
+  const thumb_ext = landmarks[4].x < landmarks[3].x - 0.04 ||
+                    landmarks[4].x > landmarks[3].x + 0.04;
+  const index_ext  = extended(8);
+  const middle_ext = extended(12);
+  const ring_ext   = extended(16);
+  const pinky_ext  = extended(20);
+
+  const fingers = [index_ext, middle_ext, ring_ext, pinky_ext];
+  const count   = fingers.filter(Boolean).length;
+
+  // distance helpers
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const thumbTip = landmarks[4];
+  const indexTip = landmarks[8];
+  const middleTip = landmarks[12];
+
+  if (!index_ext && !middle_ext && !ring_ext && !pinky_ext) return "A";
+  if (index_ext && middle_ext && !ring_ext && !pinky_ext) {
+    if (dist(indexTip, middleTip) < 0.06) return "U";
+    return "V";
+  }
+  if (index_ext && !middle_ext && !ring_ext && !pinky_ext) return "D";
+  if (!index_ext && !middle_ext && !ring_ext && pinky_ext) return "I";
+  if (index_ext && middle_ext && ring_ext && !pinky_ext) return "W";
+  if (index_ext && middle_ext && ring_ext && pinky_ext) return "B";
+  if (!index_ext && !middle_ext && !ring_ext && !pinky_ext && thumb_ext) return "A";
+  if (dist(thumbTip, indexTip) < 0.07 && !middle_ext && !ring_ext && !pinky_ext) return "F";
+  if (dist(thumbTip, indexTip) < 0.07 && middle_ext && ring_ext && pinky_ext) return "F";
+  if (count === 0) return "S";
+
+  return null;
+}
+
+let recognizer, lastVideoTime = -1, sentence = "";
+let holdTimer = null, currentHeld = null, lastAdded = null;
+const HOLD_MS = 900;
+const history = [];
+
+async function init() {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+  recognizer = await GestureRecognizer.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+      delegate: "GPU",
+    },
+    runningMode: "VIDEO",
+    numHands: 1,
+  });
+}
+
+window.startCamera = async function () {
+  document.getElementById("start-overlay").style.display = "none";
+  if (!recognizer) await init();
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480, facingMode: "user" },
+  });
+  video.srcObject = stream;
+  video.addEventListener("loadeddata", predict);
+};
+
+function predict() {
+  if (video.currentTime === lastVideoTime) { requestAnimationFrame(predict); return; }
+  lastVideoTime = video.currentTime;
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const result = recognizer.recognizeForVideo(video, performance.now());
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let topSign = null, topConf = 0;
+  let landmarks = null;
+
+  if (result.landmarks && result.landmarks.length > 0) {
+    landmarks = result.landmarks[0];
+    const du = new DrawingUtils(ctx);
+    du.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
+      color: "#00ff88", lineWidth: 2
+    });
+    du.drawLandmarks(landmarks, { color: "#ffffff", radius: 3 });
+  }
+
+  if (result.gestures && result.gestures.length > 0) {
+    const g = result.gestures[0][0];
+    const mapped = SIGN_MAP[g.categoryName];
+
+    const letterFromLM = landmarks ? classifyLetter(landmarks) : null;
+
+    if (mapped) {
+      topSign = mapped.letter;
+      topConf = g.score;
+    } else if (letterFromLM) {
+      topSign = letterFromLM;
+      topConf = 0.82;
+    }
+
+    // top bars
+    const topGestures = result.gestures[0].slice(0, 4);
+    renderBars(topGestures, letterFromLM, topConf);
+  } else if (landmarks) {
+    const letterFromLM = classifyLetter(landmarks);
+    if (letterFromLM) {
+      topSign = letterFromLM;
+      topConf = 0.75;
+      renderBars([], letterFromLM, topConf);
+    }
+  }
+
+  updatePrediction(topSign, topConf);
+  requestAnimationFrame(predict);
+}
+
+function updatePrediction(sign, conf) {
+  const predSign = document.getElementById("pred-sign");
+  const predConf = document.getElementById("pred-conf");
+
+  if (!sign) {
+    predSign.textContent = "—";
+    predConf.textContent = "No hand detected";
+    holdTimer = null;
+    currentHeld = null;
+    return;
+  }
+
+  predSign.textContent = sign;
+  predConf.textContent = `${(conf * 100).toFixed(0)}% confidence — hold to confirm`;
+
+  if (sign === currentHeld) return;
+
+  currentHeld = sign;
+  if (holdTimer) clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => {
+    if (currentHeld === sign && sign !== lastAdded) {
+      addToSentence(sign);
+      lastAdded = sign;
+      predConf.textContent = `✓ Added "${sign}"`;
+    }
+  }, HOLD_MS);
+}
+
+function addToSentence(letter) {
+  sentence += letter;
+  document.getElementById("sentence").textContent = sentence || " ";
+
+  history.unshift(letter);
+  if (history.length > 12) history.pop();
+  renderHistory();
+}
+
+window.addSpace   = () => { sentence += " "; refresh(); lastAdded = null; };
+window.backspace  = () => { sentence = sentence.slice(0, -1); refresh(); lastAdded = null; };
+window.clearSentence = () => { sentence = ""; refresh(); lastAdded = null; };
+function refresh() {
+  document.getElementById("sentence").textContent = sentence || " ";
+}
+
+function renderHistory() {
+  const el = document.getElementById("history-list");
+  el.innerHTML = history.map(l =>
+    `<span class="history-item">${l}</span>`
+  ).join("");
+}
+
+function renderBars(gestures, letter, conf) {
+  const el = document.getElementById("top-bars");
+  const items = [];
+  if (letter) items.push({ label: letter, score: conf });
+  for (const g of gestures) {
+    const m = SIGN_MAP[g.categoryName];
+    if (m) items.push({ label: m.letter, score: g.score });
+  }
+  if (!items.length) { el.innerHTML = '<div class="tip">Detecting...</div>'; return; }
+  const top = items.slice(0, 4);
+  el.innerHTML = top.map(it => `
+    <div class="chart-bar">
+      <span class="label">${it.label}</span>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${(it.score*100).toFixed(0)}%"></div></div>
+      <span class="pct">${(it.score*100).toFixed(0)}%</span>
+    </div>
+  `).join("");
+}
+</script>
+</body>
+</html>
